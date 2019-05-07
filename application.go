@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/just1689/polyglot-queues/queues"
+	"github.com/nats-io/go-nats"
 	"github.com/nsqio/go-nsq"
 	"log"
 	"sync"
@@ -13,6 +14,7 @@ import (
 var Name = flag.String("name", "", "The name of the instance")
 var AddrNSQD = flag.String("nsqd", "nsqd:4150", "The Address of nsq daemon")
 var AddrNSQLookupD = flag.String("nsqld", "nsqlookupd:4161", "The Address of nsq lookup daemon")
+var AddrNats = flag.String("nats", "nats://nats-cluster-node-2:4222", "The address of the NATS")
 var stopSub chan bool
 
 const Global = "global"
@@ -30,11 +32,17 @@ func main() {
 	}
 
 	fmt.Println(*Name, "@ Version", Version)
+
+	//NSQ
 	go subscribeNSQ()
 	go publishNSQ()
 
+	//NATS
+	go subscribeNATS()
+	go publishNATS()
+
 	go func() {
-		time.Sleep(1 * time.Minute)
+		time.Sleep(30 * time.Second)
 		wg.Done()
 	}()
 
@@ -47,7 +55,7 @@ func publishNSQ() {
 	config := nsq.NewConfig()
 	w, _ := nsq.NewProducer(*AddrNSQD, config)
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 		msg := fmt.Sprint("Hello from ", *Name)
 		err := w.Publish(Global, []byte(msg))
 		if err != nil {
@@ -64,12 +72,37 @@ func subscribeNSQ() {
 		LookupAddress: *AddrNSQLookupD,
 		Topic:         Global,
 		Channel:       *Name,
-		F:             nsqReceive,
+		F:             handlerNSQ,
 		RemoteStopper: stopSub,
 	}
 	queues.Subscribe(config)
 }
 
-func nsqReceive(c *queues.Config, b []byte) {
-	fmt.Println(*Name, "has received:", string(b))
+func handlerNSQ(c *queues.Config, b []byte) {
+	fmt.Println(*Name, " (NSQ) has received:", string(b))
+}
+
+///
+///		NATS
+///
+
+func publishNATS() {
+	nc, _ := nats.Connect(*AddrNats)
+	for {
+		time.Sleep(2 * time.Second)
+		nc.Publish(Global, []byte(fmt.Sprint("Hello from", *Name)))
+	}
+	nc.Close()
+}
+
+func handleNATS(m *nats.Msg) {
+	fmt.Println(*Name, " (NATS) has received:", string(m.Data))
+}
+
+func subscribeNATS() {
+	nc, _ := nats.Connect(*AddrNats)
+	_, err := nc.Subscribe(Global, handleNATS)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
