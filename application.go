@@ -55,7 +55,7 @@ func publishNSQ() {
 	config := nsq.NewConfig()
 	w, _ := nsq.NewProducer(*AddrNSQD, config)
 	for {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		msg := fmt.Sprint("Hello from ", *Name)
 		err := w.Publish(Global, []byte(msg))
 		if err != nil {
