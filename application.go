@@ -55,7 +55,7 @@ func publishNSQ() {
 	config := nsq.NewConfig()
 	w, _ := nsq.NewProducer(*AddrNSQD, config)
 	for {
-		time.Sleep(2 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 		msg := fmt.Sprint("Hello from ", *Name)
 		err := w.Publish(Global, []byte(msg))
 		if err != nil {
@@ -79,7 +79,7 @@ func subscribeNSQ() {
 }
 
 func handlerNSQ(c *queues.Config, b []byte) {
-	fmt.Println(*Name, " (NSQ) has received:", string(b))
+	fmt.Println(*Name, "has received:", string(b), "(NSQ)")
 }
 
 ///
@@ -89,14 +89,14 @@ func handlerNSQ(c *queues.Config, b []byte) {
 func publishNATS() {
 	nc, _ := nats.Connect(*AddrNats)
 	for {
-		time.Sleep(2 * time.Second)
-		nc.Publish(Global, []byte(fmt.Sprint("Hello from", *Name)))
+		time.Sleep(100 * time.Millisecond)
+		nc.Publish(Global, []byte(fmt.Sprint("Hello from ", *Name)))
 	}
 	nc.Close()
 }
 
 func handleNATS(m *nats.Msg) {
-	fmt.Println(*Name, " (NATS) has received:", string(m.Data))
+	fmt.Println(*Name, "has received:", string(m.Data), "(NATS)")
 }
 
 func subscribeNATS() {
