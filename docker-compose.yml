@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  # polyglot queues
+  pq1:
+    image: pq/pq:pq
+    command: -name Numero1
+    depends_on:
+      - nsqlookupd
+      - nsqd
+    networks:
+      - my-services
+  pq2:
+    image: pq/pq:pq
+    command: -name Numero2
+    depends_on:
+      - nsqlookupd
+      - nsqd
+    networks:
+      - my-services
+  # NSQ
+  nsqlookupd:
+    image: nsqio/nsq
+    command: /nsqlookupd
+    ports:
+      - "4160"
+      - "4161"
+    networks:
+      - my-services
+  nsqd:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=stack_nsqlookupd:4160
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4150"
+      - "4151"
+    networks:
+      - my-services
+  nsqadmin:
+    image: nsqio/nsq
+    command: /nsqadmin --lookupd-http-address=stack_nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+    ports:
+      - "4171"
+    networks:
+      - my-services
+
+# Networking
+networks:
+  my-services:
+    driver: overlay
