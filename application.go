@@ -14,7 +14,7 @@ import (
 var Name = flag.String("name", "", "The name of the instance")
 var AddrNSQD = flag.String("nsqd", "nsqd:4150", "The Address of nsq daemon")
 var AddrNSQLookupD = flag.String("nsqld", "nsqlookupd:4161", "The Address of nsq lookup daemon")
-var AddrNats = flag.String("nats", "nats://nats-cluster-node-2:4222", "The address of the NATS")
+var AddrNATS = flag.String("nats", "nats://nats-cluster-node-2:4222", "The address of the NATS")
 var stopSub chan bool
 
 const Global = "global"
@@ -87,7 +87,7 @@ func handlerNSQ(c *queues.Config, b []byte) {
 ///
 
 func publishNATS() {
-	nc, _ := nats.Connect(*AddrNats)
+	nc, _ := nats.Connect(*AddrNATS)
 	for {
 		time.Sleep(100 * time.Millisecond)
 		nc.Publish(Global, []byte(fmt.Sprint("Hello from ", *Name)))
@@ -100,7 +100,7 @@ func handleNATS(m *nats.Msg) {
 }
 
 func subscribeNATS() {
-	nc, _ := nats.Connect(*AddrNats)
+	nc, _ := nats.Connect(*AddrNATS)
 	_, err := nc.Subscribe(Global, handleNATS)
 	if err != nil {
 		fmt.Println(err)
